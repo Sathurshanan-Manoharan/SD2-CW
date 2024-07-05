@@ -1,3 +1,4 @@
+import java.io.*;
 import java.util.Scanner;
 
 public class Main {
@@ -10,22 +11,27 @@ public class Main {
     public static String[] studentNameArray = new String[MAX_SEATS];
 
     public static void main(String[] args) {
-        // System.out.println("""
-        //         \t======================================
-        //         \t= Student Activity Management System =
-        //         \t======================================\n
-        //         """);
+         System.out.println("""
+                 \t======================================
+                 \t= Student Activity Management System =
+                 \t======================================
+                 """);
 
+        File PreviousData = new File("Programme_Data_File.txt");
+        if (PreviousData.exists()) {
+            System.out.println("\nWARNING! Previous data has been found. If you want to load that data select option 6\n");
+        }
         while(true){
-            // System.out.println("""
-            //     1. Check available seats\s
-            //     2. Register student (with ID)\s
-            //     3. Delete student\s
-            //     4. Find student (with student ID)\s
-            //     5. Store student details into a file\s
-            //     6. Load student details from the file to the system\s
-            //     7. View the list of students based on their names
-            //     """);
+             System.out.println("""
+
+                 1. Check available seats\s
+                 2. Register student (with ID)\s
+                 3. Delete student\s
+                 4. Find student (with student ID)\s
+                 5. Store student details into a file\s
+                 6. Load student details from the file to the system\s
+                 7. View the list of students based on their names
+                 """);
 
             Scanner input = new Scanner(System.in);
             System.out.print("Select an option: ");
@@ -87,7 +93,8 @@ public class Main {
         if(registeredStudents > 0){
             System.out.print("Enter student ID to delete: ");
             int studentID = input.nextInt();
-            int deletingIndex = 0;
+            int deletingIndex = 0; // This is used to store the index of the student to be deleted
+
             for (int i = 0; i < studentIdArray.length; i++){
                 if(studentIdArray[i] == studentID){
                     deletingIndex = i;
@@ -98,21 +105,15 @@ public class Main {
                 }
             }
 
-            for (int i = 0; i < studentIdArray.length; i++) {
-                System.out.println(studentIdArray[i] + studentNameArray[i]);
-            }
-            System.out.println("After====");
-
+            // Shifting the array elements after deleting the student
             for(int i = deletingIndex; i < studentIdArray.length - 1; i++){
                 studentIdArray[i] = studentIdArray[i + 1];
                 studentNameArray[i] = studentNameArray[i + 1];
             }
+            // Setting the last element to 0 and null
             studentIdArray[MAX_SEATS - 1] = 0;
             studentNameArray[MAX_SEATS - 1] = null;
 
-            for (int i = 0; i < studentIdArray.length; i++){
-                System.out.println(studentIdArray[i] + studentNameArray[i]);
-            }
         }else{
             System.out.println("No student records are there to delete!");
         }
@@ -129,14 +130,12 @@ public class Main {
             if (studentIdArray[i] == studentID) {
                 studentIdIndex = i;
                 isStudentAvailable = true;
-               //  technically should return other details
-                //also if returning other details check the location from here, save it to a varaible and then get other details from the same location
             
             }
         }
 
         if(isStudentAvailable){
-            System.out.println("Name - " + studentNameArray[studentIdIndex] + "\nID - " + studentIdArray[studentIdIndex]);
+            System.out.println("Name - " + studentNameArray[studentIdIndex] + " | ID - " + studentIdArray[studentIdIndex]);
         }else{
             System.out.println("Student not available!");
         }
@@ -144,18 +143,71 @@ public class Main {
     }
 
     public static void storeStudentDetails(){
-        System.out.println("Store student details");
+        // Storing the student details
+        try {
+            FileOutputStream fileOut = new FileOutputStream("Programme_Data_File.txt");
+            ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
+
+            objectOut.writeObject(availableSeats);
+            objectOut.writeObject(registeredStudents);
+            objectOut.writeObject(studentIdArray);
+            objectOut.writeObject(studentNameArray);
+            objectOut.close();
+            System.out.println("\nSuccessfully stored the Data into the file.\n");
+
+        } catch (IOException e) {
+            System.out.println("An error occurred!: " + e);
+        }
+
     }
 
     public static void loadStudentDetails(){
-        System.out.println("Load student details");
+        try {
+            FileInputStream fileIn = new FileInputStream("Programme_Data_File.txt");
+            ObjectInputStream objectIn = new ObjectInputStream(fileIn);
+
+            availableSeats = (int) objectIn.readObject();    //loading available seats
+            registeredStudents = (int) objectIn.readObject();    //loading registered students
+            studentIdArray = (int[]) objectIn.readObject();    //loading student id array
+            studentNameArray = (String[]) objectIn.readObject();    //loading student name array
+            objectIn.close();
+            System.out.println("File successfully loaded!");
+
+        } catch (IOException e) {
+            System.out.println("File does not exist!\n");
+        } catch (ClassNotFoundException e1) {
+            System.out.println("Class not found!\n");
+        }
     }
 
-    public static void viewListOfStudents(){
-       
-    }
+    public static void viewListOfStudents() {
+        // Sorting the student names
+        // Copying the student names and ids to a new array
+        String[] newStudentNameArray = new String[registeredStudents];
+        int[] newStudentIdArray = new int[registeredStudents];
 
-    public static void invalidInput(){
-        System.out.println("Invalid input");
+        for (int i = 0; i < registeredStudents; i++) {
+            newStudentNameArray[i] = studentNameArray[i];
+            newStudentIdArray[i] = studentIdArray[i];
+        }
+
+        for (int i = 0; i < registeredStudents; i++) {
+            for (int j = i + 1; j < registeredStudents; j++) {
+                if (newStudentNameArray[i].compareTo(newStudentNameArray[j]) > 0) {
+                    String tempName = newStudentNameArray[i];
+                    newStudentNameArray[i] = newStudentNameArray[j];
+                    newStudentNameArray[j] = tempName;
+
+                    int tempId = newStudentIdArray[i];
+                    newStudentIdArray[i] = newStudentIdArray[j];
+                    newStudentIdArray[j] = tempId;
+                }
+            }
+        }
+
+        // Displaying the sorted student names
+        for (int i = 0; i < registeredStudents; i++) {
+            System.out.println((i + 1) + ". Name - " + newStudentNameArray[i] + " | ID - " + newStudentIdArray[i]);
+        }
     }
 }
